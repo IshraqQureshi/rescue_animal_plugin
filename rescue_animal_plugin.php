@@ -6,13 +6,19 @@
  * Author: Ishraq Qureshi
  */
 
+// Ensure this file is not accessed directly
+if (!defined('ABSPATH')) {
+	exit;
+}
 
-
-require_once("classes/RescueAnimalsPostType.php"); 
-
+require_once('classes/RescueAnimalsPostType.php'); 
+require_once('classes/EnqueueAssets.php');
 
 // Instantiate the class to trigger the hooks
 new RescueAnimalsPostType();
+
+// Instantiate the class to enqueue frontend and admin assets
+new EnqueueAssets();
 
 function set_archive_template($archive_template) {
 	global $post;   
