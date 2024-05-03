@@ -70,7 +70,7 @@ class RescueAnimalsPostType {
       wp_nonce_field('save_post_type_meta_box', 'resident_type_nonce');
 
       echo '<label for="resident_type">Resident Type: </label>';
-      echo '<select name="resident_type"><option value="permanent">Permanent</option><option value="adoption">Available for adoption</option></select>';
+      echo '<select name="resident_type"><option value="permanent"'. selected($resident_type, 'permanent', false)  .'>Permanent</option><option value="adoption" '. selected($resident_type, 'adoption', false) .'>Available for adoption</option></select>';
   }
 
   public function exclusive_content_meta_box_callback($post) {
@@ -80,8 +80,8 @@ class RescueAnimalsPostType {
     wp_nonce_field('save_post_type_meta_box', 'exclusive_content_nonce');
 
     echo '<div id="repeater-container">';
-      if ($repeater_data && is_array($repeater_data)) {
-          foreach ($repeater_data as $key => $data) {
+      if ($exclusive_content && is_array($exclusive_content)) {
+          foreach ($exclusive_content as $key => $data) {
               $this->render_repeater_item($key, $data);
           }
       } else {
@@ -103,19 +103,64 @@ class RescueAnimalsPostType {
     echo '<script>
         (function($){
             $("#add-repeater-item").on("click", function(){
-                var index = $("#repeater-container > .repeater-item").length;
-                var newItem = $(".repeater-item:first").clone();
-                newItem.find("input, textarea").val(""); // Clear inputs
-                newItem.find("textarea").html(""); // Clear editor content
-                newItem.attr("data-index", index); // Update index
-                newItem.find(".remove-repeater-item").show(); // Show remove button
-                $("#repeater-container").append(newItem);
+
+                const newItem = $(".repeater-item:first").clone();
+                const newIndex = index = $("#repeater-container > .repeater-item").length;
+                
+                newItem.attr("data-index", newIndex);
+
+                inputs = newItem[0].querySelectorAll("input, textarea, select");
+                newItem.find("input, textarea").val("");
+                newItem.find(".remove-repeater-item").show();
+                newItem.find("textarea").html("");
+
+                inputs.forEach(input => {
+                    const name = input.getAttribute("name");
+                    if (name) {
+                        const updatedName = name.replace(/\[\d+\]/, `[${newIndex}]`);
+                        input.setAttribute("name", updatedName);
+                    }
+                });
+
+                $("#repeater-container").append(newItem);            
+
             });
 
             $(document).on("click", ".remove-repeater-item", function(){
                 if ($("#repeater-container > .repeater-item").length > 1) {
                     $(this).closest(".repeater-item").remove(); // Remove item
                 }
+            });
+
+            $(".upload-image-button").on("click", function(e) {
+                e.preventDefault();
+        
+                // Store a reference to the current button
+                var button = $(this);
+        
+                // Create a new media frame for the image uploader
+                var frame = wp.media({
+                    title: "Select or Upload an Image",
+                    button: {
+                        text: "Use this image"
+                    },
+                    multiple: false // Single image upload
+                });
+        
+                // When an image is selected in the media uploader
+                frame.on("select", function() {
+                    var attachment = frame.state().get("selection").first().toJSON();
+        
+                    // Example: Store the attachment ID in a hidden field
+                    button.siblings("input[type=hidden]").val(attachment.id);
+        
+                    // Optionally display a preview of the image
+                    var imagePreview = button.siblings(".image-preview");
+                    imagePreview.html(`<img src="${attachment.url}" style="max-width: 100px;">`);
+                });
+        
+                // Open the media frame
+                frame.open();
             });
 
         })(jQuery);
@@ -130,20 +175,20 @@ class RescueAnimalsPostType {
 
     echo '<div class="repeater-item" data-index="' . esc_attr($index) . '">';
     echo '<div style="margin-bottom: 10px;">';
-    echo '<label>Image: </label>';
-    echo '<input type="hidden" name="exclusive_content[' . $index . '][image_id]" value="' . esc_attr($image_id) . '" />';
-    echo '<button class="button upload-image-button">Upload Image</button>';
-    echo '<div class="image-preview" style="margin-top: 10px;">' . ($image_id ? wp_get_attachment_image($image_id) : '') . '</div>';
+        echo '<label>Image: </label>';
+        echo '<button class="button upload-image-button">Upload Image</button>';
+        echo '<input type="hidden" name="exclusive_content[' . $index . '][image_id]" value="' . esc_attr($image_id) . '" />';
+        echo '<div class="image-preview" style="margin-top: 10px;">' . ($image_id ? wp_get_attachment_image($image_id) : '') . '</div>';
     echo '</div>';
 
     echo '<div>';
-    echo '<label>Content: </label>';
-    echo '<textarea name="exclusive_content[' . $index . '][content]" class="large-text">' . esc_textarea($content) . '</textarea>';
+        echo '<label>Content: </label>';
+        echo '<textarea name="exclusive_content[' . $index . '][content]" class="large-text">' . esc_textarea($content) . '</textarea>';
     echo '</div>';
 
     echo '<div>';
-    echo '<label>Date: </label>';
-    echo '<input name="exclusive_content[' . $index . '][date]" type="date" value="'. esc_textarea($date) .'">';
+        echo '<label>Date: </label>';
+        echo '<input name="exclusive_content[' . $index . '][date]" type="date" value="'. esc_textarea($date) .'">';
     echo '</div>';
 
     echo '<button type="button" class="button remove-repeater-item" style="margin-top: 10px;">Remove</button>';
@@ -175,7 +220,6 @@ class RescueAnimalsPostType {
       // Update the meta field with sanitized data
       if (isset($_POST['exclusive_content']) && is_array($_POST['exclusive_content'])) {
         $sanitized_data = array();
-
         foreach ($_POST['exclusive_content'] as $index => $data) {
             $sanitized_data[$index] = array(
                 'image_id' => isset($data['image_id']) ? sanitize_text_field($data['image_id']) : '',

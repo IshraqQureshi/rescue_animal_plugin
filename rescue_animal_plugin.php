@@ -97,10 +97,6 @@ function create_stripe_subscription_session() {
 	$data = json_decode(file_get_contents('php://input'), true);
 	$donationAmount = $data['amount'];
 
-	ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 	// Create a recurring Stripe Checkout session (Subscription)
 	// Replace 'your-price-id' with the Price ID from Stripe for your recurring donation
 	$session = \Stripe\Checkout\Session::create([
