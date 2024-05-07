@@ -42,7 +42,7 @@ if (have_posts()) :
 			get_footer();
 			return false;
 		}
-
+		?><div class="mm-container"><?php
 		// Output the page title
 		echo '<h1>' . get_the_title() . '</h1>';
 
@@ -52,7 +52,7 @@ if (have_posts()) :
 		// Get and output the custom field value for "resident_type"
 		$resident_type = get_post_meta(get_the_ID(), '_resident_type', true); // Adjust custom field name
 		if (!empty($resident_type)) {
-			echo '<p><strong>Resident Type:</strong> ' . esc_html($resident_type) . '</p>';
+			echo '<p class="res-type"><strong>Resident Type:</strong> ' . esc_html($resident_type) . '</p>';
 		}
 
 
@@ -72,8 +72,12 @@ if (have_posts()) :
 				$post_id,
 				$status
 			), ARRAY_A);  // ARRAY_A for associative array results
-
-			if (count($results) > 0) :
+			?>
+			<div id="dynamic_exclusive_content">
+			<?php
+			if (count($results) > 0) : ?>					
+			    <div class="parent_paid_box">
+				<?php
 				foreach ($exclusive_content as $key => $content) {
 					$date1 = new DateTime($content['date']);
 					$date2 = new DateTime($results[0]['donation_date']);
@@ -88,21 +92,37 @@ if (have_posts()) :
 						);
 						$url_with_query = add_query_arg($query_args, $post_permalink);
 						?>
-						<?php echo wp_get_attachment_image($content['image_id']) ?>
-						<p><?php echo $content['content'] ?></p>
-						<div style="position=relative">
-							<button class="copyLinkButton" data-social-link="<?php echo $url_with_query; ?>?">Share On Social Media Link</button>
-							<div class="tooltip" style="display: none;position: absolute;background: #333;color: #fff;padding: 5px;border-radius: 3px;font-size: 12px;">
-								Link Copied</div>
+						<div class="paid_cart">
+							<div class="paidImage">
+								<?php echo wp_get_attachment_image($content['image_id']) ?>
+							</div>
+							<div class="paidContent">
+								<p><?php echo $content['content'] ?></p>
+								<div style="position=relative">
+								<a href="<?php echo 'https://www.facebook.com/sharer/sharer.php?u=' . $url_with_query ?>" title="'.__('Share On Instagram', ETHEME_DOMAIN).'" target="_blank">
+									Share on Facebook
+								</a>
+								<a href="<?php echo 'https://twitter.com/intent/tweet?url=' . $url_with_query ?>" title="'.__('Share On Instagram', ETHEME_DOMAIN).'" target="_blank">
+									Share on Twitter
+								</a>
+									<!-- <button class="copyLinkButton" data-social-link="<?php echo $url_with_query; ?>?">Share On Social Media Link</button>
+									<button class="copyLinkButton" data-social-link="<?php echo $url_with_query; ?>?">Share On Social Media Link</button>
+									<button class="copyLinkButton" data-social-link="<?php echo $url_with_query; ?>?">Share On Social Media Link</button> -->
+									<div class="tooltip" style="display: none;position: absolute;background: #333;color: #fff;padding: 5px;border-radius: 3px;font-size: 12px;">
+										Link Copied</div>
+								</div>
+							</div>
 						</div>
-		<?php endif;
+						
+						<?php endif;
 				}
-
+				?></div></div> <!-- End of parent_paid_box --><?php
+				
 			endif;
 		}
 
 		?>
-		<?php if (is_user_logged_in()) : ?>
+		<?php if (is_user_logged_in() && !(count($results) > 0) ) : ?>
 
 			<form id="payment-form">
 				<label for="amount">Amount (USD):</label>
@@ -115,7 +135,7 @@ if (have_posts()) :
 			</form>
 
 		<?php endif; ?>
-
+		</div>
 		<!-- Include Stripe JS -->
 		<script src="https://js.stripe.com/v3/"></script>
 
@@ -156,8 +176,12 @@ if (have_posts()) :
 						xhr.onreadystatechange = function() {
 							if (xhr.readyState == 4 && xhr.status == 200) {
 								console.log(xhr.responseText);
+								const response = JSON.parse(xhr.response);
+								console.log(response.data);
+								jQuery('#dynamic_exclusive_content').html(response.data.html);
 								// Handle successful payment
 								alert("Payment successful!");
+								
 							} else if (xhr.readyState == 4) {
 								console.error(xhr.responseText);
 								alert("Payment failed. Please try again.");
@@ -170,6 +194,7 @@ if (have_posts()) :
 					}
 				});
 			});
+
 		</script>
 		<script>
 			jQuery(document).ready(function() {

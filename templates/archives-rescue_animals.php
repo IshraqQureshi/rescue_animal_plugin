@@ -30,6 +30,7 @@ if ($resident_type_filter) {
 $query = new WP_Query($args);
 
 if ($query->have_posts()) :
+    ?><div class="mm-container"><?php
     echo '<div class="rescue-animals">';
 
     // Display a filter form
@@ -48,15 +49,18 @@ if ($query->have_posts()) :
     echo '</select>';
     echo '<button type="submit">Apply</button>';
     echo '</form>';
-
     // Loop through the posts and display them
+    ?><div class="anchor_wrap"><?php
     while ($query->have_posts()) :
         $query->the_post();
-        // Display post content
-        the_title('<h2>', '</h2>');
-        the_content();
+        // Display post content ?>
+        <a href="<?php the_permalink(); ?>" class="archive_cart_wrap">
+        <h2><?php the_title(); ?></h2>
+        <div class="customPara"><?php the_content(); ?></div>
+    </a><?php
     endwhile;
-
+    ?></div><?php
+    ?></div><?php
     // Pagination
     echo paginate_links(array(
         'total' => $query->max_num_pages,

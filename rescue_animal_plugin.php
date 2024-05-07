@@ -1,9 +1,10 @@
+
 <?php
 /**
  * Plugin Name: Rescue Animals Custom Plugin
  * Description: A plugin to create a custom post type for Rescue Animals with a custom taxonomy and custom meta box.
  * Version: 1.0
- * Author: Ishraq Qureshi
+ * Author: Webs Aura
  */
 
 // Ensure this file is not accessed directly
@@ -99,9 +100,62 @@ function create_stripe_checkout_session() {
 						 )
 				 );
         http_response_code(200);
+
+				$exclusive_content = get_post_meta($_GET['post_id'], '_exclusive_content', true); // Adjust custom field name
+				 $html = "";
+				if (is_array($exclusive_content) && count($exclusive_content) > 0) {
+					$table_name = $wpdb->prefix . 'rescue_animal_donation';
+					$user_id = get_current_user_id();
+					$post_id = $_GET['post_id'];
+					$status = "completed";
+
+					$results = $wpdb->get_results($wpdb->prepare(
+						"SELECT * FROM $table_name WHERE user_id = %d AND post_id = %d AND status = %s LIMIT 1",
+						$user_id,
+						$post_id,
+						$status
+					), ARRAY_A);  // ARRAY_A for associative array results
+
+					if (count($results) > 0){
+						$html .= '<div class="parent_paid_box">';
+						foreach ($exclusive_content as $key => $content){
+							$date1 = new DateTime($content['date']);
+							$date2 = new DateTime($results[0]['donation_date']);
+							if ($date1 <= $date2){
+								$post_permalink = get_permalink($post_id);
+								$query_args = array(
+									'social_share' => true,
+									'user_id' => $user_id,
+									'exclusive_content' => $key
+								);
+								$url_with_query = add_query_arg($query_args, $post_permalink);
+								$html .= '<div class="paid_cart">';
+									$html .= '<div class="paidImage">';
+										$html .= wp_get_attachment_image($content["image_id"]);
+									$html .= '</div>';
+									$html .= '<div class="paidContent">';
+										$html .= '<p>'. $content["content"] .'</p>';
+										$html .= '<div style="position=relative">';
+											$html .= '<a href="https://www.facebook.com/sharer/sharer.php?u=' . $url_with_query .'" target="_blank">';
+												$html .= 'Share on Facebook';
+											$html .= '</a>';
+											$html .= '<a href="https://twitter.com/intent/tweet?url=' . $url_with_query .'" target="_blank">';
+												$html .= 'Share on Twitter';
+											$html .= '</a>';
+											$html .= '<div class="tooltip" style="display: none;position: absolute;background: #333;color: #fff;padding: 5px;border-radius: 3px;font-size: 12px;">Link Copied</div>';
+										$html .= '</div>';
+									$html .= '</div>';
+								$html .= '</div>';
+							}
+						}
+						$html .= '</div>';
+					}
+				}
+
         wp_send_json_success([
 					"status" => true,
-					"message" => "Payment Successfully"
+					"message" => "Payment Successfully",
+					"html" => $html
 				]);
     } catch (\Stripe\Exception\CardException $e) {
         http_response_code(400);
